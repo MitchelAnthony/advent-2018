@@ -1,61 +1,49 @@
-struct Device {
+pub struct Device {
     frequency: isize,
+    natural_frequency: Option<isize>,
     history: Vec<isize>,
 }
 
 impl Device {
-    fn new() -> Device {
+    pub fn new() -> Device {
         Device { 
             frequency: 0,
-            history: vec![0]
+            natural_frequency: None,
+            history: vec![0],
         }
     }
 
-    fn update_frequency(&mut self, change: isize) -> isize {
+    pub fn update_frequencies(&mut self, changes: &Vec<isize>) -> isize {
+        for change in changes {
+            self.update_frequency(*change);
+        }
+
+        self.frequency
+    }
+
+    pub fn update_frequency(&mut self, change: isize) -> isize {
         self.frequency += change;
         self.history.push(self.frequency);
 
         self.frequency
     }
 
-    fn duplicate_frequency(&self) -> Result<isize, bool> {
+    pub fn update_natural_frequency(&mut self) -> Option<isize> {
         use std::collections::HashMap;
-        let mut frequency_map: HashMap<isize, isize> = HashMap::new();
+
+        let mut frequencies: HashMap<isize, isize> = HashMap::new();
 
         for frequency in &self.history {
-            match frequency_map.get(&frequency) {
-                Some(i) => return Ok(*i),
-                _ => (),
-            };
+            if frequencies.get(frequency).is_some() {
+                self.natural_frequency = Some(*frequency);
+                return self.natural_frequency;
+            }
 
-            frequency_map.insert(*frequency, *frequency);
+            frequencies.insert(*frequency, 1);
         }
 
-        Err(false)
+        None
     }
-}
-
-pub fn calibrate(filename: &str) -> isize {
-    let tardis_device = prepare_device(filename);
-
-    tardis_device.frequency
-}
-
-pub fn duplicate_frequency(filename: &str) -> Result<isize, bool> {
-    let tardis_device = prepare_device(filename);
-
-    tardis_device.duplicate_frequency()
-}
-
-fn prepare_device(filename: &str) -> Device {
-    let mut tardis_device = Device::new();
-    let frequency_changes = parse_input(filename);
-
-    for change in frequency_changes {
-        tardis_device.update_frequency(change);
-    }
-
-    tardis_device
 }
 
 fn parse_input(filename: &str) -> Vec<isize> {
@@ -77,16 +65,38 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_calibrate() {
-        assert_eq!(calibrate("./src/resources/test/chronal_calibration_1.txt"), 76);
-        assert_eq!(calibrate("./src/resources/test/chronal_calibration_2.txt"), -5);
-        assert_eq!(calibrate("./src/resources/chronal_calibration.txt"), 477);
-    }
+    fn test() {
+        let mut tardis_device = Device::new();
+        let mut frequencies = parse_input("./src/resources/test/chronal_calibration_1.txt");
+        let mut frequency = tardis_device.update_frequencies(&frequencies);
+        let mut natural_frequency = tardis_device.update_natural_frequency();
+        
+        assert_eq!(frequency, 76);
+        assert_eq!(natural_frequency, None);
 
-    #[test]
-    fn test_duplicate_frequency() {
-        assert_eq!(duplicate_frequency("./src/resources/test/chronal_calibration_1.txt"), Err(false));
-        assert_eq!(duplicate_frequency("./src/resources/test/chronal_calibration_2.txt"), Ok(-8));
-        assert_eq!(duplicate_frequency("./src/resources/chronal_calibration.txt"), Ok(0));
+
+        tardis_device = Device::new();
+        frequencies = parse_input("./src/resources/test/chronal_calibration_2.txt");
+        frequency = tardis_device.update_frequencies(&frequencies);
+        natural_frequency = tardis_device.update_natural_frequency();
+
+        assert_eq!(frequency, -5);
+        assert_eq!(natural_frequency, Some(-8));
+
+
+        tardis_device = Device::new();
+        frequencies = parse_input("./src/resources/chronal_calibration.txt");
+        frequency = tardis_device.update_frequencies(&frequencies);
+        loop {
+            natural_frequency = tardis_device.update_natural_frequency();
+            if natural_frequency.is_some() {
+                break;
+            }
+
+            tardis_device.update_frequencies(&frequencies);
+        }
+        
+        assert_eq!(frequency, 477);
+        assert_eq!(natural_frequency, Some(390));
     }
 }
