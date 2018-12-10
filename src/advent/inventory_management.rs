@@ -21,6 +21,12 @@ impl Inventory {
         double * triple
     }
 
+    pub fn common_letters(&self) -> String {
+        println!("{:#?}", self.boxes);        
+        
+        String::from("")
+    }
+
     fn check_duplicate(string: &str, count: isize) -> isize {
         use std::collections::HashMap;
 
@@ -38,6 +44,17 @@ impl Inventory {
         }
 
         0
+    }
+
+    fn find_single_letter_diff(string_one: &str, string_two: &str) -> isize {
+        let mut index = -1;
+        let mut matches = 0;
+        
+        if string_one.len() != string_two.len() {
+            return index;
+        }
+
+        index
     }
 }
 
@@ -64,6 +81,10 @@ mod tests {
         let mut boxes = load_inventory("./src/resources/test/inventory_management_1.txt");
         let mut inventory = Inventory::new(boxes);
         assert_eq!(inventory.checksum(), 12);
+
+        boxes = load_inventory("./src/resources/test/inventory_management_2.txt");
+        inventory = Inventory::new(boxes);
+        assert_eq!(inventory.common_letters(), "fgij");
 
         boxes = load_inventory("./src/resources/inventory_management.txt");
         inventory = Inventory::new(boxes);
