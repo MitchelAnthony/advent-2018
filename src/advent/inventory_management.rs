@@ -22,9 +22,35 @@ impl Inventory {
     }
 
     pub fn common_letters(&self) -> String {
-        println!("{:#?}", self.boxes);        
-        
-        String::from("")
+        let mut id_one = String::from("");
+        let mut id_two = String::from("");
+        let mut index = -1;
+
+        for (key, box_id_one) in self.boxes.iter().enumerate() {
+            for box_id_two in self.boxes.iter().skip(key + 1) {
+                let i = Inventory::find_single_letter_diff(&box_id_one, &box_id_two);
+                if i != -1 {
+                    index = i;
+                    id_one = box_id_one.clone();
+                    id_two = box_id_two.clone();
+                    break;
+                }
+            }
+        }
+
+        if id_one.len() == 0 {
+            return String::from("");
+        }
+
+        let mut letters = String::from("");
+        for (key, letter) in id_one.chars().enumerate() {
+            if (key as isize) == index {
+                continue;
+            }
+            letters.push(letter);
+        }
+
+        letters
     }
 
     fn check_duplicate(string: &str, count: isize) -> isize {
@@ -48,13 +74,32 @@ impl Inventory {
 
     fn find_single_letter_diff(string_one: &str, string_two: &str) -> isize {
         let mut index = -1;
-        let mut matches = 0;
+        let mut differences = 0;
         
         if string_one.len() != string_two.len() {
-            return index;
+            return -1;
         }
 
-        index
+        let mut chars_one = string_one.chars().enumerate().peekable();
+        let mut chars_two = string_two.chars();
+        loop {
+            if chars_one.peek().is_none() {
+                break;
+            }
+            let (key, char_one) = chars_one.next().unwrap();
+            let char_two = chars_two.next().unwrap();
+
+            if char_one != char_two {
+                index = key as isize;
+                differences += 1;
+            }
+        }
+
+        if differences == 1 {
+            index
+        } else {
+            -1
+        }
     }
 }
 
@@ -89,5 +134,29 @@ mod tests {
         boxes = load_inventory("./src/resources/inventory_management.txt");
         inventory = Inventory::new(boxes);
         assert_eq!(inventory.checksum(), 6225);
+        assert_eq!(inventory.common_letters(), "revtaubfniyhsgxdoajwkqilp");
+    }
+
+    #[test]
+    fn test_find_differences() {
+        let mut s1 = String::from("test");
+        let mut s2 = String::from("tezt");
+        assert_eq!(Inventory::find_single_letter_diff(&s1, &s2), 2);
+
+        s1 = String::from("applebananapear");
+        s2 = String::from("applebananopear");
+        assert_eq!(Inventory::find_single_letter_diff(&s1, &s2), 10);
+
+        s1 = String::from("apple");
+        s2 = String::from("apple");
+        assert_eq!(Inventory::find_single_letter_diff(&s1, &s2), -1);
+
+        s1 = String::from("apple");
+        s2 = String::from("apples");
+        assert_eq!(Inventory::find_single_letter_diff(&s1, &s2), -1);
+
+        s1 = String::from("apple");
+        s2 = String::from("azzle");
+        assert_eq!(Inventory::find_single_letter_diff(&s1, &s2), -1);
     }
 }
